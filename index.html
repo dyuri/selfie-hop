@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>SelfieHop++</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/tf.js"></script>
+  <script src="js/body-pix.js"></script>
+</head>
+<body>
+  <main>
+    <div class="preview">
+      <canvas id="preview" width="600" height="600"></canvas>
+    </div>
+
+    <input type="file" id="bginput">
+
+    <div class="snapshot">
+      <canvas id="snapshot" width="600" height="600"></canvas>
+    </div>
+
+    <div class="background">
+      <img id="background" src="img/bg1.jpg" alt="background"/>
+    </div>
+  </main>
+  <script type="module">
+    import { init } from './js/selfiehop.js';
+
+    const preview = document.getElementById('preview');
+    const snapshot = document.getElementById('snapshot');
+    const bgInput = document.getElementById('bginput');
+
+    const config = { preview, snapshot };
+
+    // TODO
+    bgInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        const img = new Image();
+        img.src = dataUrl;
+        img.onload = () => {
+          config.background = img;
+        };
+      };
+      reader.readAsDataURL(file);
+    });
+
+    init(config);
+  </script>
+</body>
+</html>
