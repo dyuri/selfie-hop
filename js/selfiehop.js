@@ -1,7 +1,7 @@
 let streaming = false;
 
 const PREVIEW_CONFIG = {
-  internalResolution:  'medium', // 'low',
+  internalResolution:  'low',
   segmentationThreshold: 0.7,
   maxDetections: 3,
   scoreThreshold: 0.5,
@@ -23,7 +23,7 @@ const SNAPSHOT_CONFIG = {
 };
 
 const DEFAULT_CONFIG = {
-  width: 600,
+  width: 800,
   maskBlur: '3px',
   bgBlur: '1px',
   previewConfig: PREVIEW_CONFIG,
@@ -112,9 +112,11 @@ function webcamStartup(c) {
 
 export async function init(config) {
   config.width = config.width || DEFAULT_CONFIG.width;
+  /*
   if (config.width > window.innerWidth) {
     config.width = window.innerWidth;
   }
+  */
   config.height = config.height || config.width;
 
   Object.entries(DEFAULT_CONFIG).forEach(([key, value]) => {
@@ -131,10 +133,36 @@ export async function init(config) {
 
   config.preview = config.preview || document.getElementById('preview');
   config.snapshot = config.snapshot || document.getElementById('snapshot');
-  config.background = config.background || document.getElementById('background');
+  config.background = config.background || document.querySelector('.background__image > img');
+  config.bgInput = config.bgInput || document.getElementById('bginput');
+  config.uploadBtn = config.uploadBtn || document.getElementById('uploadBtn');
 
   config.preview.addEventListener('click', () => {
     takeSnapshot(config);
+  });
+
+  config.uploadBtn?.addEventListener('click', () => {
+    config.bgInput?.click();
+  });
+
+  config.bgInput?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataUrl = ev.target.result;
+      const img = new Image();
+      img.src = dataUrl;
+      img.onload = () => {
+        config.background = img;
+      };
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.querySelector('.background')?.addEventListener('click', e => {
+    if (e.target.matches('.background__image > img')) {
+      config.background = e.target;
+    }
   });
 
   previewWCLoop(config);

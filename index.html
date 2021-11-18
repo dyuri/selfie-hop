@@ -11,17 +11,40 @@
 <body>
   <main>
     <div class="preview">
-      <canvas id="preview" width="600" height="600"></canvas>
+      <canvas id="preview" width="800" height="800"></canvas>
     </div>
 
     <input type="file" id="bginput">
 
     <div class="snapshot">
-      <canvas id="snapshot" width="600" height="600"></canvas>
+      <canvas id="snapshot" width="800" height="800"></canvas>
     </div>
 
     <div class="background">
-      <img id="background" src="img/bg1.jpg" alt="background"/>
+      <div class="background__image">
+        <img src="img/bg1.jpg" alt=""/>
+      </div>
+      <div class="background__image">
+        <img src="img/bg2.jpg" alt=""/>
+      </div>
+      <div class="background__image">
+        <img src="img/bg3.jpg" alt=""/>
+      </div>
+      <div class="background__image">
+        <img src="img/bg4.jpg" alt=""/>
+      </div>
+      <div class="background__image">
+        <img src="img/bg5.jpg" alt=""/>
+      </div>
+      <div class="background__image">
+        <img src="img/bg6.jpg" alt=""/>
+      </div>
+      <div class="background__image">
+        <img src="img/bg7.jpg" alt=""/>
+      </div>
+      <div class="background__image" id="uploadBtn">
+        <span>+</span>
+      </div>
     </div>
   </main>
   <script type="module">
@@ -31,22 +54,7 @@
     const snapshot = document.getElementById('snapshot');
     const bgInput = document.getElementById('bginput');
 
-    const config = { preview, snapshot };
-
-    // TODO
-    bgInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target.result;
-        const img = new Image();
-        img.src = dataUrl;
-        img.onload = () => {
-          config.background = img;
-        };
-      };
-      reader.readAsDataURL(file);
-    });
+    const config = { preview, snapshot, bgInput };
 
     init(config);
   </script>
