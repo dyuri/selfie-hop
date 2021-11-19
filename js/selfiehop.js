@@ -70,6 +70,15 @@ function previewWCLoop(c) {
 
 function takeSnapshot(c) {
   detectFace(c, c.snapshot, c.snapshotConfig);
+  document.body.classList.add('snapshot');
+}
+
+function saveSnapshot(target) {
+  const data = target.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = data;
+  a.download = 'selfiehop.png';
+  a.click();
 }
 
 function webcamStartup(c) {
@@ -136,9 +145,22 @@ export async function init(config) {
   config.background = config.background || document.querySelector('.background__image > img');
   config.bgInput = config.bgInput || document.getElementById('bginput');
   config.uploadBtn = config.uploadBtn || document.getElementById('uploadBtn');
+  config.configPanel = config.configPanel || document.querySelector('.config');
 
-  config.preview.addEventListener('click', () => {
+  document.addEventListener('click', e => {
+    if (e.target.matches('.snapshot__save, .snapshot__save *')) {
+      saveSnapshot(config.snapshot);
+    } else if (e.target.matches('.snapshot, .snapshot *')) {
+      document.body.classList.remove('snapshot');
+    } else if (e.target.matches('.config__toggle, .config__toggle *')) {
+      config.configPanel.classList.toggle('active');
+    }
+  });
+
+  config.preview.addEventListener('click', e => {
     takeSnapshot(config);
+    e.stopPropagation();
+    e.preventDefault();
   });
 
   config.uploadBtn?.addEventListener('click', () => {

@@ -9,42 +9,49 @@
   <script src="js/body-pix.js"></script>
 </head>
 <body>
+  <header>
+    <h1>SelfieHop++</h1>
+  </header>
   <main>
     <div class="preview">
       <canvas id="preview" width="800" height="800"></canvas>
     </div>
 
-    <input type="file" id="bginput">
-
-    <div class="snapshot">
-      <canvas id="snapshot" width="800" height="800"></canvas>
+    <div class="config">
+      <button class="config__toggle">⯅<span hidden>Show/hide</span></button>
+      <div class="background">
+        <div class="background__image">
+          <img src="img/bg1.jpg" alt=""/>
+        </div>
+        <div class="background__image">
+          <img src="img/bg2.jpg" alt=""/>
+        </div>
+        <div class="background__image">
+          <img src="img/bg3.jpg" alt=""/>
+        </div>
+        <div class="background__image">
+          <img src="img/bg4.jpg" alt=""/>
+        </div>
+        <div class="background__image">
+          <img src="img/bg5.jpg" alt=""/>
+        </div>
+        <div class="background__image">
+          <img src="img/bg6.jpg" alt=""/>
+        </div>
+        <div class="background__image">
+          <img src="img/bg7.jpg" alt=""/>
+        </div>
+        <div class="background__image" id="uploadBtn">
+          <span>+</span>
+        </div>
+        <input type="file" id="bginput">
+      </div>
     </div>
 
-    <div class="background">
-      <div class="background__image">
-        <img src="img/bg1.jpg" alt=""/>
-      </div>
-      <div class="background__image">
-        <img src="img/bg2.jpg" alt=""/>
-      </div>
-      <div class="background__image">
-        <img src="img/bg3.jpg" alt=""/>
-      </div>
-      <div class="background__image">
-        <img src="img/bg4.jpg" alt=""/>
-      </div>
-      <div class="background__image">
-        <img src="img/bg5.jpg" alt=""/>
-      </div>
-      <div class="background__image">
-        <img src="img/bg6.jpg" alt=""/>
-      </div>
-      <div class="background__image">
-        <img src="img/bg7.jpg" alt=""/>
-      </div>
-      <div class="background__image" id="uploadBtn">
-        <span>+</span>
-      </div>
+    <div class="snapshot__panel">
+      <canvas id="snapshot" width="800" height="800"></canvas>
+      <button class="snapshot__close">Close</button>
+      <button class="snapshot__save">Save selfie!</button>
     </div>
   </main>
   <script type="module">
