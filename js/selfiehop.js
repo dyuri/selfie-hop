@@ -1,3 +1,5 @@
+import { histogramBorders, transformHistogram } from './colorutils.js';
+
 let streaming = false;
 
 const PREVIEW_CONFIG = {
@@ -8,7 +10,8 @@ const PREVIEW_CONFIG = {
   nmsRadius: 20,
   scaleFactor: 0.8,
   flipHorizontal: false,
-  internalScaling: 0.5
+  internalScaling: 0.5,
+  toneMapping: false
 };
 
 const SNAPSHOT_CONFIG = {
@@ -19,7 +22,8 @@ const SNAPSHOT_CONFIG = {
   nmsRadius: 20,
   scaleFactor: 0.8,
   flipHorizontal: false,
-  internalScaling: 0.5
+  internalScaling: 0.5,
+  toneMapping: true
 };
 
 const DEFAULT_CONFIG = {
@@ -52,9 +56,20 @@ async function detectFace(c, target, segConfig) {
   ctx.filter = `blur(${c.maskBlur})`;
   ctx.globalCompositeOperation = 'destination-in';
   ctx.drawImage(c.maskcanvas, 0, 0, c.width, c.width);
+
+  if (segConfig.toneMapping) {
+    const imgData = ctx.getImageData(0, 0, c.width, c.width);
+    const wcHistBorders = histogramBorders(imgData);
+    const bgHistBorders = histogramBorders(c.bgCanvas.getContext('2d').getImageData(0, 0, c.width, c.width));
+    // green adjustment
+    bgHistBorders.g = {min: (wcHistBorders.g.min + bgHistBorders.g.min) / 2, max: (wcHistBorders.g.max + bgHistBorders.g.max) / 2};
+
+    ctx.putImageData(transformHistogram(imgData, wcHistBorders, bgHistBorders), 0, 0);
+  }
+
   ctx.filter = `blur(${c.bgBlur})`;
   ctx.globalCompositeOperation = 'destination-over';
-  ctx.drawImage(c.background, 0, 0, c.width, c.width);
+  ctx.drawImage(c.bgCanvas, 0, 0, c.width, c.width);
 
   // reset
   ctx.filter = 'none';
@@ -68,8 +83,8 @@ function previewWCLoop(c) {
   setTimeout(previewWCLoop, 1000 / 30, c);
 }
 
-function takeSnapshot(c) {
-  detectFace(c, c.snapshot, c.snapshotConfig);
+async function takeSnapshot(c) {
+  await detectFace(c, c.snapshot, c.snapshotConfig);
   document.body.classList.add('snapshot');
 }
 
@@ -150,6 +165,15 @@ export async function init(config) {
   config.uploadBtn = config.uploadBtn || document.getElementById('uploadBtn');
   config.configPanel = config.configPanel || document.querySelector('.config');
 
+  if (!config.bgCanvas) {
+    config.bgCanvas = document.createElement('canvas');
+    config.bgCanvas.width = config.width;
+    config.bgCanvas.height = config.width;
+    if (config.background) {
+      config.bgCanvas.getContext('2d').drawImage(config.background, 0, 0, config.width, config.width);
+    }
+  }
+
   document.addEventListener('click', e => {
     if (e.target.matches('.snapshot__save, .snapshot__save *')) {
       saveSnapshot(config.snapshot);
@@ -178,7 +202,7 @@ export async function init(config) {
       const img = new Image();
       img.src = dataUrl;
       img.onload = () => {
-        config.background = img;
+        config.bgCanvas.getContext('2d').drawImage(img, 0, 0, config.width, config.width);
       };
     };
     reader.readAsDataURL(file);
@@ -186,7 +210,7 @@ export async function init(config) {
 
   document.querySelector('.background')?.addEventListener('click', e => {
     if (e.target.matches('.background__image > img')) {
-      config.background = e.target;
+      config.bgCanvas.getContext('2d').drawImage(e.target, 0, 0, config.width, config.width);
     }
   });
 

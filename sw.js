@@ -1,4 +1,4 @@
-const cacheName = 'sh-cache-21111918';
+const cacheName = 'sh-cache-21111921';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -31,7 +31,7 @@ self.addEventListener('fetch', (event) => {
       return cache.match(event.request).then(response => {
         return response || fetch(event.request).then(res => {
           cache.put(event.request, res.clone());
-          return response;
+          return res;
         });
       });
     })
