@@ -75,9 +75,11 @@ function takeSnapshot(c) {
 
 function saveSnapshot(target) {
   const data = target.toDataURL('image/png');
+  const now = new Date();
+  const filename = `selfiehop-${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}.png`;
   const a = document.createElement('a');
   a.href = data;
-  a.download = 'selfiehop.png';
+  a.download = filename;
   a.click();
 }
 

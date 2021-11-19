@@ -1,10 +1,12 @@
+const cacheName = 'sh-cache-21111918';
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open('sh1').then((cache) => {
+    caches.open(cacheName).then((cache) => {
       return cache.addAll([
         './',
         './css/style.css',
-        './js/selfiehop.js',
+        './js/selfiehop.js?v=' + cacheName,
         './js/tf.js',
         './js/body-pix.js',
         // backgrounds
@@ -25,8 +27,13 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.open(cacheName).then((cache) => {
+      return cache.match(event.request).then(response => {
+        return response || fetch(event.request).then(res => {
+          cache.put(event.request, res.clone());
+          return response;
+        });
+      });
     })
   );
 });
