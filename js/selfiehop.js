@@ -121,11 +121,6 @@ function webcamStartup(c) {
 
 export async function init(config) {
   config.width = config.width || DEFAULT_CONFIG.width;
-  /*
-  if (config.width > window.innerWidth) {
-    config.width = window.innerWidth;
-  }
-  */
   config.height = config.height || config.width;
 
   Object.entries(DEFAULT_CONFIG).forEach(([key, value]) => {
@@ -138,7 +133,13 @@ export async function init(config) {
 
   webcamStartup(config);
 
-  config.net = await window.bodyPix.load(); // TODO model
+  config.net = await window.bodyPix.load({ // TODO ResNet50 ?
+    architecture: 'MobileNetV1',
+    outputStride: 16,
+    multiplier: 0.75,
+    quantBytes: 2,
+    modelUrl: './model/model-stride16.json'
+  });
 
   config.preview = config.preview || document.getElementById('preview');
   config.snapshot = config.snapshot || document.getElementById('snapshot');
@@ -190,4 +191,15 @@ export async function init(config) {
   previewWCLoop(config);
 
   document.body.removeAttribute("initializing");
+}
+
+// register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', {scope: './'}).then(registration => {
+      console.log('SW registered: ', registration);
+    }).catch(registrationError => {
+      console.log('SW registration failed: ', registrationError);
+    });
+  });
 }

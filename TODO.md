@@ -1,10 +1,10 @@
-# Selfie-hop / Run-where-I-run
+# SelfieHop
 
 - square images (webcam clipping) (/)
 - low res preview (/)
-- high res snapshot
-- background selection
-  - selection
+- high res snapshot (/)
+- background selection (/)
+  - selection (/)
   - upload (/)
 - configuration
   - blur (bg, mask)
