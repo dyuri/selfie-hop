@@ -26,12 +26,41 @@ const SNAPSHOT_CONFIG = {
   toneMapping: true
 };
 
+const NET_CONFIG_MOBILE = {
+  architecture: 'MobileNetV1',
+  outputStride: 16,
+  multiplier: 0.75,
+  quantBytes: 2,
+  modelUrl: './model/model-stride16.json'
+};
+
+const NET_CONFIG_PRO = {
+  architecture: 'ResNet50',
+  outputStride: 32,
+  quantBytes: 2
+};
+
 const DEFAULT_CONFIG = {
   width: 800,
   maskBlur: '3px',
   bgBlur: '1px',
   previewConfig: PREVIEW_CONFIG,
   snapshotConfig: SNAPSHOT_CONFIG,
+  netConfig: NET_CONFIG_MOBILE,
+};
+
+const PRO_CONFIG = {
+  width: 800,
+  maskBlur: '3px',
+  bgBlur: null,
+  previewConfig: PREVIEW_CONFIG,
+  snapshotConfig: SNAPSHOT_CONFIG,
+  netConfig: NET_CONFIG_PRO,
+};
+
+const CONFIGS = {
+  default: DEFAULT_CONFIG,
+  pro: PRO_CONFIG
 };
 
 async function detectFace(c, target, segConfig) {
@@ -67,7 +96,11 @@ async function detectFace(c, target, segConfig) {
     ctx.putImageData(transformHistogram(imgData, wcHistBorders, bgHistBorders), 0, 0);
   }
 
-  ctx.filter = `blur(${c.bgBlur})`;
+  if (c.bgBlur) {
+    ctx.filter = `blur(${c.bgBlur})`;
+  } else {
+    ctx.filter = 'none';
+  }
   ctx.globalCompositeOperation = 'destination-over';
   ctx.drawImage(c.bgCanvas, 0, 0, c.width, c.width);
 
@@ -136,11 +169,22 @@ function webcamStartup(c) {
   }, false);
 }
 
+function getDefaultConfig() {
+  if (window.location.search.indexOf('config') > -1) {
+    const config = window.location.search.split('config=')[1];
+    if (config in CONFIGS) {
+      return CONFIGS[config];
+    }
+  }
+  return CONFIGS.default;
+}
+
 export async function init(config) {
-  config.width = config.width || DEFAULT_CONFIG.width;
+  const defaultConfig = getDefaultConfig();
+  config.width = config.width || defaultConfig.width;
   config.height = config.height || config.width;
 
-  Object.entries(DEFAULT_CONFIG).forEach(([key, value]) => {
+  Object.entries(defaultConfig).forEach(([key, value]) => {
     if (!config[key]) {
       config[key] = value;
     }
@@ -150,13 +194,7 @@ export async function init(config) {
 
   webcamStartup(config);
 
-  config.net = await window.bodyPix.load({ // TODO ResNet50 ?
-    architecture: 'MobileNetV1',
-    outputStride: 16,
-    multiplier: 0.75,
-    quantBytes: 2,
-    modelUrl: './model/model-stride16.json'
-  });
+  config.net = await window.bodyPix.load(config.netConfig);
 
   config.preview = config.preview || document.getElementById('preview');
   config.snapshot = config.snapshot || document.getElementById('snapshot');
