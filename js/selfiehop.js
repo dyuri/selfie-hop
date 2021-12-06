@@ -37,7 +37,7 @@ const NET_CONFIG_MOBILE = {
 const NET_CONFIG_PRO = {
   architecture: 'ResNet50',
   outputStride: 32,
-  quantBytes: 2
+  quantBytes: 4
 };
 
 const DEFAULT_CONFIG = {
@@ -173,6 +173,7 @@ function getDefaultConfig() {
   if (window.location.search.indexOf('config') > -1) {
     const config = window.location.search.split('config=')[1];
     if (config in CONFIGS) {
+      document.querySelector('h1').innerText += ` (${config})`;
       return CONFIGS[config];
     }
   }
