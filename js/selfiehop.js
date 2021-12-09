@@ -83,6 +83,10 @@ const CONFIG_PANEL = {
     type: 'checkbox',
     label: 'Tone mapping'
   },
+  flip: {
+    type: 'checkbox',
+    label: 'Flip webcam'
+  },
   spTop: {
     type: 'range',
     label: 'Selfie position top',
@@ -229,12 +233,15 @@ function webcamStartup(c) {
 }
 
 function getDefaultConfig() {
+  const storedConfig = localStorage.getItem('config');
   if (window.location.search.indexOf('config') > -1) {
     const config = window.location.search.split('config=')[1];
     if (config in CONFIGS) {
       document.querySelector('h1').innerText += ` (${config})`;
       return CONFIGS[config];
     }
+  } else if (storedConfig) {
+    return JSON.parse(storedConfig);
   }
   return CONFIGS.default;
 }
@@ -277,9 +284,41 @@ function updateConfigPanel(config) {
         }
       });
     });
-
   }
 
+  Object.entries(CONFIG_PANEL).forEach(cfgitem => {
+    const key = cfgitem[0];
+    const cnf = cfgitem[1];
+    const el = document.querySelector(`#config-${key}`);
+    if (el) {
+      if (cnf.type === 'checkbox') {
+        el.checked = config[key];
+      } else {
+        el.value = config[key];
+      }
+    }
+  });
+
+}
+
+function saveConfig(config) {
+  const cfg = {};
+
+  Object.keys(config).forEach(key => {
+    if (key in DEFAULT_CONFIG) {
+      cfg[key] = config[key];
+    }
+  });
+  localStorage.setItem('config', JSON.stringify(cfg));
+}
+
+function resetConfig(config) {
+  Object.keys(config).forEach(key => {
+    if (key in DEFAULT_CONFIG) {
+      config[key] = DEFAULT_CONFIG[key];
+    }
+  });
+  updateConfigPanel(config);
 }
 
 export async function init(config) {
@@ -322,6 +361,10 @@ export async function init(config) {
       document.body.classList.remove('snapshot');
     } else if (e.target.matches('.config__toggle, .config__toggle *')) {
       config.configPanel.classList.toggle('active');
+    } else if (e.target.matches('button.save_config, button.save_config *')) {
+      saveConfig(config);
+    } else if (e.target.matches('button.reset_config, button.reset_config *')) {
+      resetConfig(config);
     }
   });
 

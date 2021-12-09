@@ -14,6 +14,6 @@
   - multiple images
   - selfie positioning (/)
   - css theme
-  - save to localstorage
+  - save to localstorage (/)
 - local model(s)
 - camera selection
