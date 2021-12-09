@@ -90,7 +90,8 @@ h1 {
   left: 0;
   right: 0;
   max-width: 100vw;
-  padding: .5rem;
+  padding: .5rem .5rem 0;
+  gap: .5rem;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -101,6 +102,10 @@ h1 {
 
 .config.active {
   max-height: 30vh;
+}
+
+.config__panel {
+  overflow-y: auto;
 }
 
 .config button.config__toggle {
@@ -128,6 +133,7 @@ h1 {
   gap: 2vw;
   max-width: 100%;
   overflow-x: auto;
+  flex: 0 0 auto;;
 }
 
 .background__image {
@@ -158,4 +164,18 @@ button.background__image {
 
 #bginput {
   display: none;
+}
+
+.config__panel {
+  width: 100%;
+  overflow-y: auto;
+}
+
+.config__panel__item {
+  display: flex;
+  height: 2rem;
+}
+
+.config__panel__item label {
+  width: 20%;
 }

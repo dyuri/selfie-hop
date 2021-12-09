@@ -7,9 +7,13 @@
   - selection (/)
   - upload (/)
 - configuration
-  - blur (bg, mask)
-  - tone mapping
-  - flip?
+  - blur (bg, mask) (/)
+  - tone mapping (/)
+  - flip (/)
   - timer
+  - multiple images
+  - selfie positioning (/)
+  - css theme
+  - save to localstorage
 - local model(s)
 - camera selection

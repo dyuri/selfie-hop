@@ -3,7 +3,7 @@ import { histogramBorders, transformHistogram } from './colorutils.js';
 let streaming = false;
 
 const PREVIEW_CONFIG = {
-  internalResolution:  'low',
+  internalResolution: 'low',
   segmentationThreshold: 0.7,
   maxDetections: 3,
   scoreThreshold: 0.5,
@@ -15,7 +15,7 @@ const PREVIEW_CONFIG = {
 };
 
 const SNAPSHOT_CONFIG = {
-  internalResolution:  'high',
+  internalResolution: 'high',
   segmentationThreshold: 0.7,
   maxDetections: 5,
   scoreThreshold: 0.5,
@@ -41,32 +41,75 @@ const NET_CONFIG_PRO = {
 };
 
 const DEFAULT_CONFIG = {
+  spTop: 0,
+  spLeft: 0,
+  spWidth: 1,
   width: 800,
-  maskBlur: '3px',
-  bgBlur: '1px',
+  maskBlur: 3,
+  bgBlur: 1,
   previewConfig: PREVIEW_CONFIG,
   snapshotConfig: SNAPSHOT_CONFIG,
   netConfig: NET_CONFIG_MOBILE,
+  flip: false,
+  toneMapping: false // disabled because it's currently bad
 };
 
-const PRO_CONFIG = {
-  width: 800,
-  maskBlur: '3px',
-  bgBlur: null,
-  previewConfig: PREVIEW_CONFIG,
-  snapshotConfig: SNAPSHOT_CONFIG,
+const PRO_CONFIG = Object.assign({}, DEFAULT_CONFIG, {
+  bgBlur: 0,
   netConfig: NET_CONFIG_PRO,
-};
+});
 
 const CONFIGS = {
   default: DEFAULT_CONFIG,
   pro: PRO_CONFIG
 };
 
+const CONFIG_PANEL = {
+  bgBlur: {
+    type: 'range',
+    label: 'Background blur',
+    min: 0,
+    max: 5,
+    step: 1
+  },
+  maskBlur: {
+    type: 'range',
+    label: 'Mask blur',
+    min: 0,
+    max: 10,
+    step: 1
+  },
+  toneMapping: {
+    type: 'checkbox',
+    label: 'Tone mapping'
+  },
+  spTop: {
+    type: 'range',
+    label: 'Selfie position top',
+    min: 0,
+    max: 1,
+    step: 0.002,
+  },
+  spLeft: {
+    type: 'range',
+    label: 'Selfie position left',
+    min: 0,
+    max: 1,
+    step: 0.002,
+  },
+  spWidth: {
+    type: 'range',
+    label: 'Selfie position width',
+    min: 0,
+    max: 1,
+    step: 0.002,
+  },
+};
+
 async function detectFace(c, target, segConfig) {
   const segmentation = await c.net.segmentPerson(c.webcam, segConfig); // TODO multiple faces ?
 
-  const bgmask = window.bodyPix.toMask(segmentation, {r: 0, g: 0, b: 0, a: 255}, {r: 0, g:0, b: 0, a: 0});
+  const bgmask = window.bodyPix.toMask(segmentation, { r: 0, g: 0, b: 0, a: 255 }, { r: 0, g: 0, b: 0, a: 0 });
 
   if (!c.maskcanvas) {
     c.maskcanvas = document.createElement('canvas');
@@ -81,23 +124,39 @@ async function detectFace(c, target, segConfig) {
 
   const ctx = target.getContext('2d');
 
-  ctx.drawImage(c.webcam, 0, 0, c.width, c.width);
-  ctx.filter = `blur(${c.maskBlur})`;
-  ctx.globalCompositeOperation = 'destination-in';
-  ctx.drawImage(c.maskcanvas, 0, 0, c.width, c.width);
+  const spTop = c.spTop * c.width;
+  const spLeft = c.spLeft * c.width;
+  const spWidth = c.spWidth * c.width;
 
-  if (segConfig.toneMapping) {
+  if (c.flip) {
+    ctx.translate(c.width, 0);
+    ctx.scale(-1, 1);
+  }
+
+  ctx.drawImage(c.webcam, spLeft, spTop, spWidth, spWidth);
+  ctx.filter = `blur(${c.maskBlur || 2}px)`;
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.drawImage(c.maskcanvas, spLeft, spTop, spWidth, spWidth);
+
+  // flip back
+  if (c.flip) {
+    ctx.translate(c.width, 0);
+    ctx.scale(-1, 1);
+  }
+
+  // TODO
+  if (segConfig.toneMapping && c.toneMapping) {
     const imgData = ctx.getImageData(0, 0, c.width, c.width);
     const wcHistBorders = histogramBorders(imgData);
     const bgHistBorders = histogramBorders(c.bgCanvas.getContext('2d').getImageData(0, 0, c.width, c.width));
     // green adjustment
-    bgHistBorders.g = {min: (wcHistBorders.g.min + bgHistBorders.g.min) / 2, max: (wcHistBorders.g.max + bgHistBorders.g.max) / 2};
+    bgHistBorders.g = { min: (wcHistBorders.g.min + bgHistBorders.g.min) / 2, max: (wcHistBorders.g.max + bgHistBorders.g.max) / 2 };
 
     ctx.putImageData(transformHistogram(imgData, wcHistBorders, bgHistBorders), 0, 0);
   }
 
   if (c.bgBlur) {
-    ctx.filter = `blur(${c.bgBlur})`;
+    ctx.filter = `blur(${c.bgBlur}px)`;
   } else {
     ctx.filter = 'none';
   }
@@ -180,6 +239,49 @@ function getDefaultConfig() {
   return CONFIGS.default;
 }
 
+function updateConfigPanel(config) {
+  let panel = document.querySelector('.config__panel');
+
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.classList.add('config__panel');
+    config.configPanel.appendChild(panel);
+
+    Object.entries(CONFIG_PANEL).forEach(cfgitem => {
+      const key = cfgitem[0];
+      const cnf = cfgitem[1];
+      const el = document.createElement('div');
+      el.classList.add('config__panel__item');
+      el.innerHTML = `
+      <label for="config-${key}">${cnf.label || key}</label>
+      <input
+        id="config-${key}"
+        type="${cnf.type || 'text'}"
+        name="${key}"
+        value="${config[key]}"
+        ${cnf.type === 'checkbox' && config[key] ? 'checked' : ''}
+        ${cnf.min ? `min="${cnf.min}"` : ''}
+        ${cnf.max ? `max="${cnf.max}"` : ''}
+        ${cnf.step ? `step="${cnf.step}"` : ''}
+      >`;
+      panel.appendChild(el);
+
+      panel.addEventListener('change', e => {
+        if (e.target.name in config) {
+          // TODO support dotted path ?
+          if (e.target.type === 'checkbox') {
+            config[e.target.name] = e.target.checked;
+          } else {
+            config[e.target.name] = e.target.value;
+          }
+        }
+      });
+    });
+
+  }
+
+}
+
 export async function init(config) {
   const defaultConfig = getDefaultConfig();
   config.width = config.width || defaultConfig.width;
@@ -254,6 +356,10 @@ export async function init(config) {
   });
 
   previewWCLoop(config);
+  updateConfigPanel(config);
+
+  // make config available
+  window.SHCONFIG = config;
 
   document.body.removeAttribute("initializing");
 }
@@ -261,7 +367,7 @@ export async function init(config) {
 // register service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', {scope: './'}).then(registration => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' }).then(registration => {
       console.log('SW registered: ', registration);
     }).catch(registrationError => {
       console.log('SW registration failed: ', registrationError);
