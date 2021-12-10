@@ -57,6 +57,7 @@ button:hover {
   max-height: 100vh;
 }
 
+.multisnap__panel,
 .snapshot__panel {
   display: none;
   position: fixed;
@@ -67,6 +68,7 @@ button:hover {
   flex-direction: column;
 }
 
+.multisnap__panel button.multisnap__close,
 .snapshot__panel button.snapshot__close,
 .snapshot__panel button.snapshot__save {
   position: absolute;
@@ -85,12 +87,76 @@ button:hover {
   font-size: 2rem;
 }
 
+.multisnap__panel button.multisnap__close,
 .snapshot__panel button.snapshot__close {
   border-top: none;
   border-bottom: 2px solid var(--c-secondary);
   color: var(--c-secondary);
   bottom: auto;
   top: 0;
+}
+
+.multisnap .multisnap__panel {
+  display: block;
+}
+
+#multisnap {
+  display: grid;
+  height: 100vh;
+  width: 100vw;
+  gap: 1vw;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 50vh 50vh;
+}
+
+@media (orientation: landscape) {
+  #multisnap {
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 50vh 50vh;
+  }
+
+  #multisnap[multi="2"] {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 100vh;
+  }
+
+  #multisnap[multi="3"] {
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 100vh;
+  }
+
+  #multisnap[multi="4"] {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 50vh 50vh;
+  }
+}
+
+@media (orientation: portrait) {
+  #multisnap {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 33vh 33vh 33vh;
+  }
+
+  #multisnap[multi="2"] {
+    grid-template-columns: 100vw;
+    grid-template-rows: 50vh 50vh;
+  }
+
+  #multisnap[multi="3"] {
+    grid-template-columns: 100vw;
+    grid-template-rows: 33vh 33vh 33vh;
+  }
+
+  #multisnap[multi="4"] {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 50vh 50vh;
+  }
+}
+
+#multisnap > canvas {
+  object-fit: contain;
+  width: 100%;
+  height: 100%;
 }
 
 .snapshot .snapshot__panel {

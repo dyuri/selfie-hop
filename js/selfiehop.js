@@ -54,6 +54,8 @@ const DEFAULT_CONFIG = {
   netConfig: NET_CONFIG_MOBILE,
   flip: false,
   timer: 0,
+  multisnap: 0,
+  snapdelay: 200,
   toneMapping: false // disabled because it's currently bad
 };
 
@@ -117,6 +119,19 @@ const CONFIG_PANEL = {
     max: 1,
     step: 0.002,
   },
+  multisnap: {
+    type: 'number',
+    label: 'Multisnap',
+    min: 0,
+    max: 6
+  },
+  snapdelay: {
+    type: 'number',
+    label: 'Snapshot delay',
+    min: 100,
+    max: 1000,
+    step: 100
+  }
 };
 
 async function sleep(time) {
@@ -239,8 +254,27 @@ async function takeSnapshot(c) {
     }
     hideTimer(c);
   }
-  await detectFace(c, c.snapshot, c.snapshotConfig);
-  document.body.classList.add('snapshot');
+  if (!c.multisnap || +c.multisnap < 2) {
+    await detectFace(c, c.snapshot, c.snapshotConfig);
+    document.body.classList.add('snapshot');
+  } else {
+    document.body.classList.add('multisnap');
+    let mscont = document.querySelector('#multisnap');
+    if (mscont) {
+      mscont.innerHTML = '';
+      mscont.setAttribute('multi', c.multisnap);
+      for (let i = c.multisnap; i >= 1; i--) {
+        const snap = document.createElement('canvas');
+        snap.width = c.width;
+        snap.height = c.width;
+        await detectFace(c, snap, c.snapshotConfig);
+        mscont.appendChild(snap);
+        if (i > 1) {
+          await sleep(c.snapdelay);
+        }
+      }
+    }
+  }
 }
 
 function saveSnapshot(target) {
@@ -326,7 +360,7 @@ function updateConfigPanel(config) {
         name="${key}"
         value="${config[key]}"
         ${cnf.type === 'checkbox' && config[key] ? 'checked' : ''}
-        ${cnf.min ? `min="${cnf.min}"` : ''}
+        ${(cnf.min || cnf.min === 0) ? `min="${cnf.min}"` : ''}
         ${cnf.max ? `max="${cnf.max}"` : ''}
         ${cnf.step ? `step="${cnf.step}"` : ''}
       >`;
@@ -414,8 +448,10 @@ export async function init(config) {
   document.addEventListener('click', e => {
     if (e.target.matches('.snapshot__save, .snapshot__save *')) {
       saveSnapshot(config.snapshot);
-    } else if (e.target.matches('.snapshot, .snapshot *')) {
+    } else if (e.target.matches('.snapshot__close, .snapshot__close *')) {
       document.body.classList.remove('snapshot');
+    } else if (e.target.matches('.multisnap__close, .multisnap__close *')) {
+      document.body.classList.remove('multisnap');
     } else if (e.target.matches('.config__toggle, .config__toggle *')) {
       config.configPanel.classList.toggle('active');
     } else if (e.target.matches('button.save_config, button.save_config *')) {
