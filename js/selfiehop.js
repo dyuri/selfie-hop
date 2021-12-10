@@ -11,7 +11,8 @@ const PREVIEW_CONFIG = {
   scaleFactor: 0.8,
   flipHorizontal: false,
   internalScaling: 0.5,
-  toneMapping: false
+  toneMapping: false,
+  useTmpContext: false
 };
 
 const SNAPSHOT_CONFIG = {
@@ -23,7 +24,8 @@ const SNAPSHOT_CONFIG = {
   scaleFactor: 0.8,
   flipHorizontal: false,
   internalScaling: 0.5,
-  toneMapping: true
+  toneMapping: true,
+  useTmpContext: true
 };
 
 const NET_CONFIG_MOBILE = {
@@ -51,6 +53,7 @@ const DEFAULT_CONFIG = {
   snapshotConfig: SNAPSHOT_CONFIG,
   netConfig: NET_CONFIG_MOBILE,
   flip: false,
+  timer: 0,
   toneMapping: false // disabled because it's currently bad
 };
 
@@ -71,6 +74,12 @@ const CONFIG_PANEL = {
     min: 0,
     max: 5,
     step: 1
+  },
+  timer: {
+    type: 'number',
+    label: 'Timer',
+    min: 0,
+    max: 20
   },
   maskBlur: {
     type: 'range',
@@ -110,8 +119,22 @@ const CONFIG_PANEL = {
   },
 };
 
+async function sleep(time) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
+
 async function detectFace(c, target, segConfig) {
-  const segmentation = await c.net.segmentPerson(c.webcam, segConfig); // TODO multiple faces ?
+  let source = c.webcam;
+
+  if (segConfig.useTmpContext) {
+    // create temporary canvas for segmentation
+    source = document.createElement('canvas');
+    source.width = c.width;
+    source.height = c.width;
+    source.getContext('2d').drawImage(c.webcam, 0, 0, c.width, c.width);
+  }
+
+  const segmentation = await c.net.segmentPerson(source, segConfig); // TODO multiple faces ?
 
   const bgmask = window.bodyPix.toMask(segmentation, { r: 0, g: 0, b: 0, a: 255 }, { r: 0, g: 0, b: 0, a: 0 });
 
@@ -137,7 +160,7 @@ async function detectFace(c, target, segConfig) {
     ctx.scale(-1, 1);
   }
 
-  ctx.drawImage(c.webcam, spLeft, spTop, spWidth, spWidth);
+  ctx.drawImage(source, spLeft, spTop, spWidth, spWidth);
   ctx.filter = `blur(${c.maskBlur || 2}px)`;
   ctx.globalCompositeOperation = 'destination-in';
   ctx.drawImage(c.maskcanvas, spLeft, spTop, spWidth, spWidth);
@@ -179,7 +202,43 @@ function previewWCLoop(c) {
   setTimeout(previewWCLoop, 1000 / 30, c);
 }
 
+function showTimer(c) {
+  if (!c.timerOverlay) {
+    c.timerOverlay = document.querySelector('#timer');
+    if (!c.timerOverlay) {
+      c.timerOverlay = document.createElement('div');
+      c.timerOverlay.id = 'timer';
+      document.body.appendChild(c.timerOverlay);
+    }
+  }
+  c.timerOverlay.innerHTML = `${c.timer}`;
+  document.body.classList.add('timer');
+}
+
+function hideTimer(c) {
+  if (c.timerOverlay) {
+    c.timerOverlay.innerHTML = '';
+  }
+  document.body.classList.remove('timer');
+}
+
+function updateTimer(c, i) {
+  if (c.timerOverlay) {
+    c.timerOverlay.innerHTML = `${i}`;
+  }
+}
+
 async function takeSnapshot(c) {
+  // close config panel
+  c.configPanel?.classList.remove('active');
+  if (c.timer) {
+    showTimer(c);
+    for (let i = +c.timer - 1; i >= 0; i--) {
+      await sleep(1000);
+      updateTimer(c, i);
+    }
+    hideTimer(c);
+  }
   await detectFace(c, c.snapshot, c.snapshotConfig);
   document.body.classList.add('snapshot');
 }
@@ -274,13 +333,11 @@ function updateConfigPanel(config) {
       panel.appendChild(el);
 
       panel.addEventListener('change', e => {
-        if (e.target.name in config) {
-          // TODO support dotted path ?
-          if (e.target.type === 'checkbox') {
-            config[e.target.name] = e.target.checked;
-          } else {
-            config[e.target.name] = e.target.value;
-          }
+        // TODO support dotted path ?
+        if (e.target.type === 'checkbox') {
+          config[e.target.name] = e.target.checked;
+        } else {
+          config[e.target.name] = e.target.value;
         }
       });
     });

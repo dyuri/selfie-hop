@@ -1,4 +1,4 @@
-const cacheName = 'sh-cache-21120213';
+const cacheName = 'sh-cache-21121012';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
